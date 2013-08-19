@@ -1,0 +1,61 @@
+Description: Create a top level makefile
+ The original source package does not include a top-level makefile, so we 
+ create one.
+
+Author: Daniel Lintott <daniel@serverb.co.uk>
+
+Index: vpcs_0.4b2/Makefile
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ vpcs_0.4b2/Makefile	2013-08-27 17:06:03.088060954 +0100
+@@ -0,0 +1,50 @@
++# Makefile for VPCS 0.4b2
++
++# Host CPU selection
++#   - Use "i386" for a build on x86 (32-bits)
++#   - Use "amd64" for a build on x86_64 (64-bits)
++ifeq ($(shell arch),x86_64)
++export ARCH?=amd64
++endif
++
++ifeq ($(shell arch),i686)
++export ARCH?=i386
++endif
++
++# Operating System Type
++# Linux = linux
++# Windows = cygwin
++# MacOSX = osx
++ifeq ($(shell uname -s),Linux)
++export VPCS_OS?=linux
++endif
++
++ifeq ($(shell uname -s),Darwin)
++export VPCS_OS?=osx
++endif
++
++export VPCS_OS?=cygwin
++
++# Executable binary extension
++export DESTDIR?=/usr
++export BIN_EXT?=
++
++
++.PHONY: all install clean
++all: vpcs
++
++vpcs:
++	@echo Building VPCS for $(VPCS_OS) on $(ARCH)
++	$(MAKE) -C src -f Makefile.$(VPCS_OS)
++	mv src/vpcs vpcs$(BIN_EXT)
++
++install: vpcs$(BIN_EXT)
++	@echo "Installing VPCS to $(DESTDIR)"
++	install -d $(DESTDIR)/bin $(DESTDIR)/share/man/man1
++	install vpcs$(BIN_EXT) $(DESTDIR)/bin/
++	install -m644 man/vpcs.1 $(DESTDIR)/share/man/man1/
++
++clean:
++	$(MAKE) -C src -f Makefile.$(VPCS_OS) clean
++	$(RM) -f vpcs$(BIN_EXT)
++

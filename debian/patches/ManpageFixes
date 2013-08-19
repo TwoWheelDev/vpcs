@@ -1,0 +1,103 @@
+Description: vpcs.1 manpage corrections
+ Patch to fix some grammar/spelling and lintian errors
+ in vpcs.1 manpage
+ 
+Author: Daniel Lintott <daniel@serverb.co.uk>
+
+--- vpcs-0.4b2.orig/man/vpcs.1
++++ vpcs-0.4b2/man/vpcs.1
+@@ -1,6 +1,5 @@
+-
+-.TH VPCS "1" "2012-08-07" "4.0b2" "Virtual PC Simulator" 
+-./ Last revision: 2012-11-26 07:24:25
++.TH VPCS "1" "2013-08-20" "0.4b2" "Virtual PC Simulator" 
++.\" Last revision: 2013-08-20 14:32:22 
+ .hy 0 
+ .if n 
+ .ad l 
+@@ -11,7 +10,7 @@ vpcs \- Virtual PC Simulator
+ [\fIoptions\fR] [\fIscriptfile\fR]
+ .SH DESCRIPTION
+ .PP
+-The VPCS provides a command line interface to nine simulated virtual PCs.  You can ping/trace route from/to them, or ping/trace route other hosts/routers from the virtual PCs, making it an ideal study tool when you simulate Cisco or Juniper routers in a Dynamips or GNS3 environment.
++VPCS provides a command line interface to nine simulated virtual PCs.  You can ping/trace route from/to them, or ping/trace route other hosts/routers from the virtual PCs, making it an ideal study tool when you simulate Cisco or Juniper routers in a Dynamips or GNS3 environment.
+ .PP
+ Virtual PCs are able to generate and respond to ICMP (ping), TCP and UDP packets delivered to the application via a UDP pipe or Unix tap interface. If \fIscriptfile\fR is specified, then vpcs reads the file on start-up and executes the commands in the scriptfile.  \fIscriptfile\fR must be in \fBvpcs script file format\fR.
+ .PP
+@@ -28,13 +27,13 @@ Print the version information and exit
+ If \fIscriptfile\fR is specified, then vpcs reads the file on start-up and executes the commands in the \fIscriptfile\fR.  \fIscriptfile \fR must be in vpcs script file format.  By default, if a file named \fBstartup.vpc\fR exists in the directory where the vpcs program was started, it will be read and executed when vpcs starts.  The \fB-r\fR option is optional if \fIscriptfile\fR is the last parameter.
+ .TP
+ \fB-p\fR \fIport\fR
+-Run \fIvpcs\fR as a daemon process listening on TCP port specified by \fIport\fR.  As a daemon process, vpcs does not present a command line interface to the user, but the command line interface can be accessed remotely using a TCP stream application such as \fItelnet\fR or netcat (\fInc\fR).  Once the daemon has been started, there is no internal mechanism for terminating the program, and the program must be terminated by sending a system signal 9, typically by using the command \fBkill -9 PID\fR (where PID is the process id of the vpcs instance)
++Run \fIvpcs\fR as a daemon process listening on TCP port specified by \fIport\fR.  As a daemon process, vpcs does not present a command line interface to the user, but the command line interface can be accessed remotely using a TCP stream application such as \fItelnet\fR or netcat (\fInc\fR).  Once the daemon has been started, there is no internal mechanism for terminating the program, and the program must be terminated by sending a system signal 9, typically by using the command \fBkill \-9 PID\fR (where PID is the process id of the vpcs instance)
+ .TP
+ \fB-m\fR \fInum\fR
+ \fIvpcs\fR uses 9 consecutive MAC addresses for the 9 vpcs stating at 00:50:79:66:68:00 by default. The \fB-m\fR option adds \fInum\fR to the last byte of the base MAC address.  Should any increment cause the last byte exceed 0xFF during this process, it will increment to 0x00.
+ .TP
+ \fB-e\fR
+-On systems that support the \fB/dev/tapx\fR interface (Unix/Linux), run vpcs in tap mode rather than UDP mode.  In tap mode, IP packets are sent and received via /dev/tapx interfaces rather than via UPD streams.  Typically /dev/tapx interfaces are only available to the root user, meaning vpcs would also be required to be run by the root user (\fBsudo vpcs -e\fR) to use tap mode.
++On systems that support the \fB/dev/tapx\fR interface (Unix/Linux), run vpcs in tap mode rather than UDP mode.  In tap mode, IP packets are sent and received via /dev/tapx interfaces rather than via UDP streams.  Typically /dev/tapx interfaces are only available to the root user, meaning vpcs would also be required to be run by the root user (\fBsudo vpcs \-e\fR) to use tap mode.
+ .TP
+ [\fB-u\fR]
+ This option is the default and not necessary, but included to contrast with the \fB-e\fR option.  By default, vpcs sends and receives IP packets to and from specified UDP ports. vpcs listens on UDP port 20000 and sends to port 127.0.0.1:30000 by default.  The listening and sending ports can be manipulated using the \fB-s\fR, \fB-c\fR and \fB-t\fR options.
+@@ -70,7 +69,7 @@ Suppose you needed more than nine Virtua
+ .PP
+ Since the default local listening port is 20000, and the default remote port is 30000, you would want to start \fIvpcs\fR with a local listening port of 20009 (or greater) and remote port of 30009 (or greater) .  You would also want the base MAC address to be offset by at least nine to avoid any clashes.  In this case you would use the command:
+ .PP
+-\fBvpcs -s 20009 -c 30009 -m 9\fR
++\fBvpcs \-s 20009 \-c 30009 \-m 9\fR
+ 
+ .SS "Running two instances of vpcs that can communicate with each other on the one host"
+ Suppose you wanted to run a second instance of \fbvpcs\fR on your local host that can communicate with the instance already running with a default configuration.  You would have to consider:
+@@ -83,7 +82,7 @@ Suppose you wanted to run a second insta
+ .PP
+ Since the default local listening port is 20000, and the default remote port is 30000, you would want to start \fIvpcs\fR with a local listening port of 30000 and remote port of 20000.  You would also want the base MAC address to be offset by at least nine to avoid any clashes.  In this case you would use the command:
+ .PP
+-\fBvpcs -s 30000 -c 20000 -m 9\fR
++\fBvpcs \-s 30000 \-c 20000 \-m 9\fR
+ 
+ .SH INTERFACE
+ \fBvpcs\fR presents the user with a command line interface (unless daemon mode has been invoked by the \fB-p\fR option). The interface prompt indicates which of the 9 virtual PCs currently has focus by indicating the VPC number in brackets.  Eg.:
+@@ -107,7 +106,7 @@ Shortcut for: \fBshow arp\fR. Show arp t
+ \fBclear\fR [arguments]
+ Clear IPv4/IPv6, arp/neighbor cache, command history
+ .TP
+-\fBdhcp\fR [-options]
++\fBdhcp\fR [\-options]
+ Shortcut for: \fBip dhcp\fR. Get IPv4 address via DHCP
+ .TP
+ \fBecho\fR <text>
+@@ -125,7 +124,7 @@ Configure VPC's IP settings
+ \fBload\fR <filename>
+ Load the configuration/script from the file <filename>
+ .TP
+-\fBping\fR <host> [-options]
++\fBping\fR <host> [\-options]
+ Ping the network <host> with ICMP (default) or TCP/UDP
+ .TP
+ \fBquit\fR
+@@ -146,7 +145,7 @@ Print the information of VPCs (default).
+ \fBsleep\fR <seconds> [text]
+ Print <text> and pause the running script for <seconds>
+ .TP
+-\fBtrace\fR <host> [-options]
++\fBtrace\fR <host> [\-options]
+ Print the path packets take to network <host>
+ .TP
+ \fBversion\fR
+@@ -154,13 +153,13 @@ Shortcut for: \fBshow version\fR
+ .SS "vpcs script file format"
+ Any text file consisting of valid vpcs commands can be used as a vpcs script file.  Lines in the file beginning with the \fB#\fR character will be treated as comments and ignored.  Command files can make use of the \fBecho\fR and \fBsleep\fR commands to create some form of interactive script.
+ .br
+-Script file exececution can be aborted at any time by pressing Ctrl+c.  This means that the \fBping <host> -t\fR command (which must be terimated by Ctrl+c) is not useful in vpcs script files.
++Script file exececution can be aborted at any time by pressing Ctrl+c.  This means that the \fBping <host> \-t\fR command (which must be terimated by Ctrl+c) is not useful in vpcs script files.
+ 
+  
+ .SH BUGS
+ IPv6 implementation is a basic implementation that is not fully implemented.
+ .PP
+-The \fBping <host> -t\fR command (which must be terimated by Ctrl+c) can not be used in vpcs script files because when Ctrl+c is pressed to stop the ping, it also aborts the script file execution.
++The \fBping <host> \-t\fR command (which must be terimated by Ctrl+c) can not be used in vpcs script files because when Ctrl+c is pressed to stop the ping, it also aborts the script file execution.
+ .PP
+ Please send problems, bugs, questions, desirable enhancements, patches etc to the author.
+ .SH AUTHOR

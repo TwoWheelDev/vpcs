@@ -1,0 +1,5 @@
+vpcs (0.4b2-1) unstable; urgency=low
+
+  * Initial release (Closes: #720196)
+
+ -- Daniel Lintott <daniel@serverb.co.uk>  Mon, 19 Aug 2013 19:40:34 +0100

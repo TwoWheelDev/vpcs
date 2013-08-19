@@ -1,0 +1,19 @@
+Source: vpcs
+Section: net
+Priority: optional
+Maintainer: Daniel Lintott <daniel@serverb.co.uk>
+Build-Depends: debhelper (>= 9.0.0)
+Standards-Version: 3.9.4
+Homepage: http://sourceforge.net/projects/vpcs/
+Vcs-Browser: https://github.com/dlintott/vpcs
+Vcs-Git: https://github.com/dlintott/vpcs.git
+
+Package: vpcs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Virtual PC Simulator
+ VPCS can simulate up to 9 PCs. You can ping/traceroute to
+ them or ping/traceroute to other hosts/routers from the VPCS.
+ .
+ VPCS is not intended to be a fully functional PC.
+

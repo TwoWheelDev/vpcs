@@ -1,0 +1,47 @@
+Description: Linux Makefile Patch
+ This patch makes the linux makefile (Makefile.linux) suitable for Debian
+ Package building, whilst still allowing the source package to be built
+ with make.
+
+Author: Daniel Lintott <daniel@serverb.co.uk>
+
+Index: vpcs_0.4b2/src/Makefile.linux
+===================================================================
+--- vpcs_0.4b2.orig/src/Makefile.linux	2013-08-27 17:05:55.180160369 +0100
++++ vpcs_0.4b2/src/Makefile.linux	2013-08-27 17:06:52.611438360 +0100
+@@ -1,11 +1,11 @@
+ RM=rm -f
+-CC=gcc -m32
++CC=gcc
+ OSTYPE=Linux
+ CPUTYPE=i386
+ OPT=-O2
+ 
+-CFLAGS=-D$(OSTYPE) -D$(CPUTYPE) $(OPT) -Wall -I. -DTAP -Wno-strict-aliasing
+-LDFLAGS=-lpthread -lutil -s -static
++CFLAGS?=-D$(OSTYPE) -D$(CPUTYPE) $(OPT) -Wall -I. -DTAP -Wno-strict-aliasing
++LDFLAGS?=-lpthread -lutil -s
+ OBJS=vpcs.o \
+ 	daemon.o \
+ 	readline.o \
+@@ -24,11 +24,19 @@
+ 	remote.o \
+ 	help.o \
+ 	dump.o
++
++ifeq ($(ARCH),i386)
++CFLAGS += -m32
++endif
++
++ifeq ($(ARCH),amd64)
++CFLAGS += -m64
++endif
+ 	
+ all: vpcs
+ 
+ vpcs: $(OBJS)
+-	$(CC) $(OBJS) -o vpcs $(LDFLAGS) 
++	$(CC) $(CFLAGS) $(OBJS) -o vpcs $(LDFLAGS)
+ 	
+ .c.o: keys.h vpcs.h packets.h dhcp.h
+ 	$(CC) $(INCLUDE_PATH) $(CFLAGS) -c $<
