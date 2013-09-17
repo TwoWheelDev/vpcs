@@ -1,3 +1,10 @@
+vpcs (0.4b2-2) unstable; urgency=low
+
+  * Update debian/copyright to BSD-2-Clause 
+  * Create debian/watch file
+
+ -- Daniel Lintott <daniel@serverb.co.uk>  Tue, 17 Sep 2013 13:39:01 +0100
+
 vpcs (0.4b2-1) unstable; urgency=low
 
   * Initial release (Closes: #720196)
