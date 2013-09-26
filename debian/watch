@@ -1,2 +1,3 @@
-#The upstream author of VPCS does not currently provide a source package
-#The source code can be found on sourceforge at http://sourceforge.net/p/vpcs/code
+version=3
+opts=uversionmangle=s/(\d)[_\.\-\+]?((RC|rc|pre|dev|BETA|beta|alpha|b|a)[\-\.]?\d*)$/$1~$2/ \
+http://qa.debian.org/watch/sf.php/vpcs/vpcs-(\d.*)-(?:src|source)\.(?:tgz|tbz|tbz2|txz|tar\.(?:gz|bz2|xz))
