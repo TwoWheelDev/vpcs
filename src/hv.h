@@ -24,49 +24,47 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
 **/
 
-#ifndef _PKTQ_H_
-#define _PKTQ_H_
+#ifndef _HV_H_
+#define _HV_H_
 
 #include <sys/types.h>
-#include <pthread.h>		
-#include <sys/time.h>
+#include <stdlib.h>
+#include <unistd.h>
 
-#define PKTQ_SIZE	(101)
+#define delay_ms(x) usleep((x) * 1000)
 
-#define PKT_DROP	0	/* drop it */
-#define PKT_ENQ		1	/* enqueued */
-#define PKT_UP		2	/* application */
+#define ERR(out, ...) do { \
+	fprintf(out, "200-"); \
+	fprintf(out, __VA_ARGS__); \
+	fflush(out); \
+} while (0);
 
-struct packet {
-	struct packet *next;	
-	int len;
-	struct timeval ts;
-	char data[1];
+#define SUCC(out, ...) do { \
+	fprintf(out, "100-"); \
+	fprintf(out, __VA_ARGS__); \
+	fflush(out); \
+} while (0);
+
+#define DEFAULT_PORT (21000)
+#define DEFAULT_SPORT (20000)
+#define DEFAULT_CPORT (30000)
+#define STEP (10)
+
+
+#define MAX_DAEMONS (10)
+struct list {
+	pid_t pid;
+	int vport;
+	int vmac;
+	int vsport;
+	int vcport;
+	char *cmdline;
 };
 
-struct pq {
-	int type;				/* for debug */
-	int ip;					/* pointer of the queue */
-	int size;				/* size of queue */
-	pthread_mutex_t locker;
-	pthread_cond_t cond;
-	struct packet *q;
-};
-
-#define copy_pkt(dst, src) { \
-	dst->len = src->len; \
-	memcpy(dst->data, src->data, src->len); \
-	dst->ts = src->ts; \
-}
-
-void init_queue(struct pq*);
-struct packet *enq(struct pq*, struct packet *pkt);
-struct packet *deq(struct pq*);
-struct packet *waitdeq(struct pq *pq);
-void lock_q(struct pq*);
-void ulock_q(struct pq*);
-struct packet *new_pkt(int len);
-void del_pkt(struct packet *m);
+typedef struct stub {
+	char *name;
+	int (*f)(int argc, char **argv);
+} cmdStub;
 
 #endif
 

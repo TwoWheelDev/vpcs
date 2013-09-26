@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 
+#include <sys/param.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -1300,7 +1301,6 @@ int run_set(int argc, char **argv)
 {
 	int value;
 	int fd;
-	int flags;
 	pcs *pc = &vpc[pcid];
 	u_int ip;
 
@@ -1330,13 +1330,9 @@ int run_set(int argc, char **argv)
 				printf("Device(%d) open error [%s]\n", pcid, strerror(errno));
 				return 0;
 			}
-		
+			close(pc->fd);
 			pc->fd = fd;
 			pc->lport = value;
-		
-			flags = fcntl(pc->fd, F_GETFL, NULL);
-			flags |= O_NONBLOCK;
-			fcntl(pc->fd, F_SETFL, flags);
 		}
 	} else if (!strncmp("rport", argv[1], strlen(argv[1]))) {
 		if (argc != 3) {
@@ -1416,7 +1412,7 @@ int run_sleep(int argc, char **argv)
 	if (t == 0) {
 		if (argc == 1)
 			printf("Press any key to continue\n");
-		kbhit();
+		kbhit(0);
 	} else
 		sleep(t);
 
@@ -1471,13 +1467,13 @@ int run_remote(int argc, char **argv)
 			printf("Invalid port\n");
 			return help_rlogin(argc, argv);
 		}
-		return open_remote("127.0.0.1", atoi(argv[1]));
+		return open_remote(0, "127.0.0.1", atoi(argv[1]));
 	} else if (argc == 3) {
 		if (!digitstring(argv[2])) {
 			printf("Invalid port\n");
 			return help_rlogin(argc, argv);
 		}
-		return open_remote(argv[1], atoi(argv[2]));
+		return open_remote(0, argv[1], atoi(argv[2]));
 	}
 	
 	return help_rlogin(argc, argv);
@@ -1780,16 +1776,16 @@ static int show_echo(int argc, char **argv)
 
 int run_ver(int argc, char **argv)
 {
-	printf ("\n"
-		"Welcome to Virtual PC Simulator, version %s\n"
-		"Dedicated to Daling.\n"
-		"Build time: %s %s\n"
-		"Copyright (c) 2007-2012, Paul Meng (mirnshi@gmail.com)\n"
-		"All rights reserved.\n\n"
-		"VPCS is free software, distributed under the terms of the \"BSD\" licence.\n"
-		"Source code and license can be found at vpcs.sf.net.\n"
-		"For more information, please visit wiki.freecode.com.cn.\n", 
-		ver, __DATE__, __TIME__ );	
+	printf ("\r\n"
+		"Welcome to Virtual PC Simulator, version %s\r\n"
+		"Dedicated to Daling.\r\n"
+		"Build time: %s %s\r\n"
+		"Copyright (c) 2007-2013, Paul Meng (mirnshi@gmail.com)\r\n"
+		"All rights reserved.\r\n\r\n"
+		"VPCS is free software, distributed under the terms of the \"BSD\" licence.\r\n"
+		"Source code and license can be found at vpcs.sf.net.\r\n"
+		"For more information, please visit wiki.freecode.com.cn.\r\n", 
+		ver, __DATE__, __TIME__ );
 	
 	return 1;	
 }
@@ -1808,21 +1804,32 @@ int run_load(int argc, char **argv)
 {
 	FILE *fp;
 	char buf[MAX_LEN];
-
-	if (argc < 2 || (argc == 2 && strlen(argv[1]) == 1 && argv[1][0] == '?')) {
+	char fname[PATH_MAX];
+	
+	if (argc != 2 || !strcmp(argv[1], "?")) {
 		return help_load(argc, argv);
 	}
-		
+
 	fp = fopen(argv[1], "r");
 	if (fp == NULL) {
-		printf("Can't open %s\n", argv[1]);
+		/* try to open .vpc */
+		if (!strrchr(argv[1], '.') && 
+		    (strlen(argv[1]) < PATH_MAX - 5)) {
+			memset(fname, 0, PATH_MAX);
+			strncpy(fname, argv[1], PATH_MAX - 1);
+			strcat(fname, ".vpc");
+			fp = fopen(fname, "r");
+		}
+	}
+	if (fp == NULL) {
+		printf("Can't open \"%s\"\n", argv[1]);
 		return -1;
 	}
 
 	if (runStartup)
 		printf("\nExecuting the startup file\n");
 	else
-		printf("\nExecuting the file %s\n", argv[1]);
+		printf("\nExecuting the file \"%s\"\n", argv[1]);
 
 	while (!feof(fp) && !ctrl_c) {
 		runLoad = 1;
@@ -1835,9 +1842,7 @@ int run_load(int argc, char **argv)
 			if (buf[strlen(buf) - 1] == '\r')
 				buf[strlen(buf) - 1] = '\0';
 		}*/		
-		if (buf[0] == '#' ||
-			buf[0] == '!' ||
-			buf[0] == ';')
+		if (buf[0] == '#' || buf[0] == ';')
 			continue;
 		if (strlen(buf) > 0)	
 			parse_cmd(buf);
@@ -1855,11 +1860,22 @@ int run_save(int argc, char **argv)
 	char buf[64];
 	u_int local_ip;
 	struct in_addr in;
+	char fname[PATH_MAX];
 
-	if (argc < 2 || (argc == 2 && strlen(argv[1]) == 1 && argv[1][0] == '?')) {
+	if (argc != 2 || !strcmp(argv[1], "?")) {
 		return help_save(argc, argv);
-	}	
-	fp = fopen(argv[1], "w");
+	}
+	if (strlen(argv[1]) > PATH_MAX - 5) {
+		printf("%s is too long\n", argv[1]);
+		return 1;
+	}
+	
+	memset(fname, 0, PATH_MAX);
+	strncpy(fname, argv[1], PATH_MAX - 1);
+	if (!strrchr(fname, '.'))
+		strcat(fname, ".vpc");
+	
+	fp = fopen(fname, "w");
 	if (fp != NULL) {
 		local_ip = inet_addr("127.0.0.1");
 		for (i = 0; i < NUM_PTHS; i++) {

@@ -1,11 +1,12 @@
 RM=rm -f
-CC=gcc
+CC=gcc $(CCOPT)
 OSTYPE=Darwin
 CPUTYPE=i386
-OPT=-g
+OPT=-O2
+HVOPT=-DHV
 
-CFLAGS=-D$(OSTYPE) -D$(CPUTYPE) $(OPT) -Wall -I. 
-LDFLAGS=-g -lpthread
+CFLAGS=-D$(OSTYPE) -D$(CPUTYPE) $(OPT) $(HVOPT) -Wall
+LDFLAGS=-lpthread
 OBJS=vpcs.o \
 	daemon.o \
 	readline.o \
@@ -23,13 +24,15 @@ OBJS=vpcs.o \
 	dns.o \
 	remote.o \
 	help.o \
-	dump.o
+	dump.o \
+	relay.o \
+	hv.o
 
 all: vpcs
 
 vpcs: $(OBJS)
 	$(CC) $(OBJS) -o vpcs $(LDFLAGS) 
-	
+
 .c.o: keys.h vpcs.h packets.h dhcp.h
 	$(CC) $(INCLUDE_PATH) $(CFLAGS) -c $<
 

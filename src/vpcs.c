@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2012, Paul Meng (mirnshi@gmail.com)
+ * Copyright (c) 2007-2013, Paul Meng (mirnshi@gmail.com)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without 
@@ -33,6 +33,11 @@
 #include <errno.h>
 #include <pthread.h>
 
+#ifdef cygwin
+#include <windows.h>
+#include <sys/cygwin.h>
+#endif
+
 #include "globle.h"
 #include "vpcs.h"
 #include "readline.h"
@@ -44,10 +49,11 @@
 #include "daemon.h"
 #include "help.h"
 #include "dump.h"
+#include "relay.h"
 
-const char *ver = "0.4b2";
+const char *ver = "0.5b0";
 /* track the binary */
-static const char *ident = "$Id: vpcs.c 41 2012-09-13 03:40:58Z mirnshi $";
+static const char *ident = "$Id: vpcs.c 81 2013-09-20 08:14:15Z mirnshi $";
 
 int pcid = 0;  /* current vpc id */
 int devtype = 0;
@@ -74,17 +80,21 @@ int daemon_port = 0;
 
 int macaddr = 0; /* the last byte of ether address */
 
-void *pth_proc(void *devid);
-void *pth_timer_tick(void *);
+static void *pth_reader(void *devid);
+static void *pth_writer(void *devid);
+static void *pth_timer_tick(void *);
 void parse_cmd(char *cmdstr);
-void sig_int(int sig);
+static void sig_int(int sig);
+static void sig_clean(int sig);
 void clear_hist(void);
+static int invoke_cmd(const char *);
 
-void welcome(void);
+static void welcome(void);
 void usage();
-void startup(void);
+static void startup(void);
 
-int run_quit(int argc, char **argv);
+static int run_quit(int argc, char **argv);
+static int run_disconnect(int argc, char **argv);
 
 struct stub
 {
@@ -96,14 +106,16 @@ struct stub
 };
 typedef struct stub cmdStub;
 
-cmdStub cmd_entry[] = {
+static cmdStub cmd_entry[] = {
 	{"?",		NULL,	run_help,	help_help},
 	{"arp",		"show",	run_show,	help_show},
 	{"clear",	NULL,	run_clear,	help_clear},
 	{"dhcp",	"ip",	run_ipconfig,	help_ip},
+	{"disconnect",  NULL,   run_disconnect, NULL},
 	{"echo",	NULL,	run_echo,	NULL},
 	{"help",	NULL,	run_help,	help_help},
-	{"hist",	NULL,	run_hist,	NULL},
+	{"history",	NULL,	run_hist,	NULL},
+	{"relay",       NULL,   run_relay,      help_relay},
 	{"ip",		NULL,	run_ipconfig,	help_ip},
 	{"load",	NULL,	run_load,	help_load},
 	{"neighbor",	NULL,	run_nb6,	NULL},
@@ -120,23 +132,23 @@ cmdStub cmd_entry[] = {
 	{NULL, NULL}
 };
 
+#ifdef HV
+int vpcs(int argc, char **argv)
+#else
 int main(int argc, char **argv)
+#endif
 {
 	int i;
 	char prompt[MAX_LEN];
 	int c;
-	pthread_t timer_pid;
+	pthread_t timer_pid, relay_pid;
+	int daemon_bg = 1;
 	char *cmd;
-	
-	if (!isatty(0)) {
-		printf("Please run in the tty\n");
-		exit(-1);
-	}	
-	
+
 	rhost = inet_addr("127.0.0.1");
 	
-	devtype = DEV_UDP;
-	while ((c = getopt(argc, argv, "?c:ehm:p:r:s:t:uv")) != -1) {
+	devtype = DEV_UDP;		
+	while ((c = getopt(argc, argv, "?c:ehm:p:r:s:t:uvF")) != -1) {
 		switch (c) {
 			case 'c':
 				rport_flag = 1;
@@ -168,6 +180,9 @@ int main(int argc, char **argv)
 				run_ver(argc, argv);
 				exit(0);
 				break;
+			case 'F':
+				daemon_bg = 0;
+				break;
 				
 			case 'h':
 			case '?':
@@ -185,29 +200,38 @@ int main(int argc, char **argv)
 		}
 	}
 
-	signal(SIGCHLD, SIG_IGN);
-	signal(SIGINT, &sig_int);
-	
-	if (daemon_port && daemonize(daemon_port))
+	if (daemon_port && daemonize(daemon_port, daemon_bg))
 		exit(0);
+
+	if (!isatty(0)) {
+		printf("Please run in the tty\n");
+		exit(-1);
+	}	
+
+	signal(SIGINT, &sig_int);
+	signal(SIGUSR1, &sig_clean);
+	signal(SIGCHLD, SIG_IGN);
 		
 	welcome();
-	
+
 	srand(time(0));
 	memset(vpc, 0, NUM_PTHS * sizeof(pcs));
 	for (i = 0; i < NUM_PTHS; i++) {
-		if (pthread_create(&(vpc[i].pid), NULL, pth_proc, (void *)&i) != 0) {
+		if (pthread_create(&(vpc[i].rpid), NULL, pth_reader, (void *)&i) != 0) {
 			printf("PC%d error\n", i + 1);
+			fflush(stdout);
 			exit(-1);
 		}
 		strcpy(vpc[i].xname, "VPCS");
 		while (vpc[i].ip4.mac[4] == 0) 
 			delay_ms(10);
-		delay_ms(50);
+		delay_ms(100);
 	}
 	pthread_create(&timer_pid, NULL, pth_timer_tick, (void *)0);
+	delay_ms(100);
+	pthread_create(&relay_pid, NULL, pth_relay, (void *)0);
 	pcid = 0;
-	
+
 	delay_ms(50);
 	autoconf6();
 	
@@ -226,8 +250,10 @@ int main(int argc, char **argv)
 		snprintf(prompt, sizeof(prompt), "\n\r%s[%d]> ", vpc[pcid].xname, pcid + 1);
 		ctrl_c = 0;
 		cmd = readline(prompt, rls);
-		if (cmd != NULL)
+		if (cmd != NULL) {
+			ttrim(cmd);
 			parse_cmd(cmd);
+		}
 	}
 	return 0;
 }
@@ -275,6 +301,21 @@ void parse_cmd(char *cmdstr)
 		return;
 	}
 	
+	if (*cmdstr == '!') {
+		char *p = NULL;
+		if (strlen(cmdstr) > 1) {
+			p = cmdstr + 1;
+			while (*p== ' ' || *p == '\t')
+				p++;
+				
+			if (*p && strcmp(p, "?")) {
+				invoke_cmd(p);
+				return;
+			}
+		}
+		help_shell(0, NULL);
+		return;
+	}
 	for (ep = cmd_entry; ep->name != NULL; ep++) {
 		if(!strncmp(argv[0], ep->name, strlen(argv[0]))) {
         		if (cmd != NULL)
@@ -334,7 +375,7 @@ void sig_int(int sig)
 	signal(SIGINT, &sig_int);
 }
 
-void *pth_proc(void *devid)
+void *pth_reader(void *devid)
 {
 	int id;
 	pcs *pc = NULL;
@@ -374,23 +415,12 @@ void *pth_proc(void *devid)
 	init_queue(&pc->oq);
 	pc->oq.type = 1 + id * 100;
 	
-	locallink6(pc);
+	if (pthread_create(&(pc->wpid), NULL, pth_writer, devid) != 0) {
+		printf("PC%d error\n", id + 1);
+		exit(-1);
+	}
 
 	while (1) {
-		while (1) {
-			struct packet *pkt = NULL;
-			
-			pkt = deq(&pc->oq);
-
-			if (pkt == NULL) 
-				break;
-
-			dmp_packet(pkt, pc->dmpflag);
-			if (VWrite(pc, pkt->data, pkt->len) != pkt->len)
-				printf("Send packet error\n");
-			del_pkt(pkt);
-		}
-		
 		rc = VRead(pc, buf, PKT_MAXSIZE);
 		if (rc > 0) {
 			m = new_pkt(PKT_MAXSIZE);
@@ -413,10 +443,32 @@ void *pth_proc(void *devid)
 					del_pkt(m);
 			} else if (rc == PKT_DROP)
 				del_pkt(m);
-		} else
-			delay_ms(0.5);
+		}
 	}		
 
+	return NULL;
+}
+
+void *pth_writer(void *devid)
+{
+	int id;
+	pcs *pc = NULL;
+	
+	id = *(int *)devid;
+	pc  = &vpc[id];
+	
+	locallink6(pc);
+	
+	while (1) {
+		struct packet *pkt = NULL;
+		
+		pkt = waitdeq(&pc->oq);
+		
+		dmp_packet(pkt, pc->dmpflag);
+		if (VWrite(pc, pkt->data, pkt->len) != pkt->len)
+			printf("Send packet error\n");
+		del_pkt(pkt);
+	}
 	return NULL;
 }
 
@@ -432,6 +484,7 @@ void *pth_timer_tick(void *dummy)
 		}
 		usleep(100);
 	}
+	return NULL;
 }
 
 void startup(void)
@@ -472,27 +525,46 @@ void startup(void)
 	}
 }
 
-int run_quit(int argc, char **argv)
+
+void 
+sig_clean(int sig)
 {
 	int i;
+	
+	for (i = 0; i < NUM_PTHS; i++)
+		close(vpc[i].fd);
+
+	if (rls != NULL && histfile != NULL) 
+		savehistory(histfile, rls);	
+}
+
+int run_quit(int argc, char **argv)
+{
 	pid_t pid;
 	
 	if (daemon_port) {
 		pid = getppid();
 		kill(pid, SIGUSR1);
-		return 0;
 	}
 		
-	for (i = 0; i < NUM_PTHS; i++)
-		close(vpc[i].fd);
-
-	if (rls != NULL && histfile != NULL) 
-		savehistory(histfile, rls);
+	sig_clean(0);
 
 	printf("\n");
 	exit(0);
 }
 
+int run_disconnect(int argc, char **argv)
+{
+	pid_t pid;
+	
+	if (daemon_port) {
+		pid = getppid();
+		kill(pid, SIGTERM);
+	} else
+		printf("NOT daemon mode\n");
+	
+	return 0;
+}
 void clear_hist(void)
 {
 	rls->hist_total = 0;	
@@ -506,28 +578,45 @@ void welcome(void)
 	return;			
 }
 
+static int 
+invoke_cmd(const char *cmd)
+{
+	int rc = 0;
+	
+#ifdef cygwin
+	char str[1024];
+	snprintf(str, sizeof(str), "%s /c %s", getenv("COMSPEC"), cmd);
+	rc = WinExec(str, SW_SHOW);
+#else	
+	rc = system(cmd);
+#endif	
+	return rc;
+}
+
 void usage()
 {
 	run_ver(0, NULL);
-	printf ("\nusage: vpcs [options] [scriptfile]\n"
-		"Option:\n"
-		"    -h         print this help then exit\n"
-		"    -v         print version information then exit\n"
-		"\n"
-		"    -p port    run as a daemon listening on the tcp 'port'\n"
-		"    -m num     start byte of ether address, default from 0\n"
-		"    -r file    load and execute script file\n"
-		"               compatible with older versions, DEPRECATED.\n"
-		"\n"
-		"    -e         tap mode, using /dev/tapx (linux only)\n"
-		"    -u         udp mode, default\n"
-		"\nudp mode options:\n"
-		"    -s port    local udp base port, default from 20000\n"
-		"    -c port    remote udp base port (dynamips udp port), default from 30000\n"
-		"    -t ip      remote host IP, default 127.0.0.1\n"
-		"\n"
-		"  If no 'scriptfile' specified, vpcs will read and execute the file named\n"
-		"  'startup.vpc' if it exsits in the current directory.\n"
-		"\n");
+	printf ("\r\nusage: vpcs [options] [scriptfile]\r\n"
+		"Option:\r\n"
+		"    -h         print this help then exit\r\n"
+		"    -v         print version information then exit\r\n"
+		"\r\n"
+		"    -p port    run as a daemon listening on the tcp 'port'\r\n"
+		"    -m num     start byte of ether address, default from 0\r\n"
+		"    -r file    load and execute script file\r\n"
+		"               compatible with older versions, DEPRECATED.\r\n"
+		"\r\n"
+		"    -e         tap mode, using /dev/tapx (linux only)\r\n"
+		"    -u         udp mode, default\r\n"
+		"\r\nudp mode options:\r\n"
+		"    -s port    local udp base port, default from 20000\r\n"
+		"    -c port    remote udp base port (dynamips udp port), default from 30000\r\n"
+		"    -t ip      remote host IP, default 127.0.0.1\r\n"
+		"\r\nhypervisor mode option:\r\n"
+		"    -H port    run as the hypervisor listening on the tcp 'port'\r\n"
+		"\r\n"
+		"  If no 'scriptfile' specified, vpcs will read and execute the file named\r\n"
+		"  'startup.vpc' if it exsits in the current directory.\r\n"
+		"\r\n");
 }
 /* end of file */

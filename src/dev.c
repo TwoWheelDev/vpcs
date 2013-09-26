@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2012, Paul Meng (mirnshi@gmail.com)
+ * Copyright (c) 2007-2013, Paul Meng (mirnshi@gmail.com)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without 
@@ -54,7 +54,15 @@ int VRead(pcs *pc, void *buf, int len)
 	struct sockaddr addr;
 	socklen_t size;
 	int n = 0;
+	fd_set readSet;
+	struct timeval timeout = {1, 0};
 	
+	FD_ZERO(&readSet);
+	FD_SET(pc->fd, &readSet);
+	
+	if (select(pc->fd + 1, &readSet, NULL, NULL, &timeout) <= 0)
+		return 0;
+		
 	switch (devtype) {
 		case DEV_TAP:
 			n = read(pc->fd, buf, len);
@@ -71,7 +79,16 @@ int VWrite(pcs *pc, void *buf, int len)
 {
 	struct sockaddr_in addr;
 	int n = 0;
-
+	fd_set writeSet;
+	struct timeval timeout = {1, 0};
+	
+	FD_ZERO(&writeSet);
+	FD_SET(pc->fd, &writeSet);
+	
+	if (select(pc->fd + 1, NULL, &writeSet, NULL, &timeout) <= 0)
+		return 0;
+		
+		
 	switch (devtype) {
 		case DEV_TAP:
 			n = write(pc->fd, buf, len);
@@ -93,8 +110,6 @@ int VWrite(pcs *pc, void *buf, int len)
 int open_dev(int id)
 {
 	int fd = 0;
-	int flags;	
-	
 
 	switch(devtype) {
 #ifdef TAP
@@ -115,10 +130,6 @@ int open_dev(int id)
 			break;
 	}
 		
-	flags = fcntl(fd, F_GETFL, NULL);
-	flags |= O_NONBLOCK;
-	fcntl(fd, F_SETFL, flags);
-    
 	return fd;
 }
 
