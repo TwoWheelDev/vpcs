@@ -4,11 +4,11 @@ Description: Create a top level makefile
 
 Author: Daniel Lintott <daniel@serverb.co.uk>
 
-Index: vpcs_0.4b2/Makefile
+Index: vpcs/Makefile
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ vpcs_0.4b2/Makefile	2013-08-27 17:06:03.088060954 +0100
-@@ -0,0 +1,50 @@
++++ vpcs/Makefile	2013-09-26 11:35:22.969944065 +0100
+@@ -0,0 +1,43 @@
 +# Makefile for VPCS 0.4b2
 +
 +# Host CPU selection
@@ -26,15 +26,8 @@ Index: vpcs_0.4b2/Makefile
 +# Linux = linux
 +# Windows = cygwin
 +# MacOSX = osx
-+ifeq ($(shell uname -s),Linux)
++# FreeBSD = fbsd
 +export VPCS_OS?=linux
-+endif
-+
-+ifeq ($(shell uname -s),Darwin)
-+export VPCS_OS?=osx
-+endif
-+
-+export VPCS_OS?=cygwin
 +
 +# Executable binary extension
 +export DESTDIR?=/usr

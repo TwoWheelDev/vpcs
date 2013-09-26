@@ -1,49 +1,32 @@
-Description: Linux Makefile Patch
- This patch makes the linux makefile (Makefile.linux) suitable for Debian
- Package building, whilst still allowing the source package to be built
- with make.
-
+Description: Patch Makefile.linux
+ Modify upstream linux Makefile to allow hardening/autobuilding
 Author: Daniel Lintott <daniel@serverb.co.uk>
 
-Index: vpcs/src/Makefile.linux
-===================================================================
---- vpcs.orig/src/Makefile.linux	2013-09-17 12:22:10.024508218 +0100
-+++ vpcs/src/Makefile.linux	2013-09-17 22:35:39.277753236 +0100
-@@ -1,11 +1,11 @@
+--- vpcs-0.5b0.orig/src/Makefile.linux
++++ vpcs-0.5b0/src/Makefile.linux
+@@ -1,12 +1,11 @@
  RM=rm -f
--CC=gcc -m32
+-CC=gcc $(CCOPT)
 +CC=gcc
  OSTYPE=Linux
 -CPUTYPE=i386
  OPT=-O2
+ HVOPT=-DHV
  
--CFLAGS=-D$(OSTYPE) -D$(CPUTYPE) $(OPT) -Wall -I. -DTAP -Wno-strict-aliasing
+-CFLAGS=-D$(OSTYPE) -D$(CPUTYPE) $(OPT) $(HVOPT) -Wall -I. -DTAP
 -LDFLAGS=-lpthread -lutil -s -static
-+CFLAGS?=-D$(OSTYPE) $(OPT) -Wall -I. -DTAP -Wno-strict-aliasing
-+CPPFLAGS?=
-+LDFLAGS?=-lpthread -lutil -s
++CFLAGS?=-D$(OSTYPE) -D$(CPUTYPE) $(OPT) $(HVOPT) -Wall -I. -DTAP
++LDFLAGS?=-lpthread -lutil -s -static
  OBJS=vpcs.o \
  	daemon.o \
  	readline.o \
-@@ -24,14 +24,22 @@
- 	remote.o \
- 	help.o \
- 	dump.o
-+
-+ifeq ($(ARCH),i386)
-+CC += -m32
-+endif
-+
-+ifeq ($(ARCH),amd64)
-+CC += -m64
-+endif
- 	
+@@ -31,10 +30,10 @@ OBJS=vpcs.o \
  all: vpcs
  
  vpcs: $(OBJS)
 -	$(CC) $(OBJS) -o vpcs $(LDFLAGS) 
-+	$(CC) $(CPPFLAGS) $(CFLAGS) $(OBJS) -o vpcs $(LDFLAGS)
- 	
++	$(CC) $(CPPFLAGS) $(CFLAGS) $(OBJS) -o vpcs $(LDFLAGS) 
+ 
  .c.o: keys.h vpcs.h packets.h dhcp.h
 -	$(CC) $(INCLUDE_PATH) $(CFLAGS) -c $<
 +	$(CC) $(INCLUDE_PATH) $(CPPFLAGS) $(CFLAGS) -c $<
