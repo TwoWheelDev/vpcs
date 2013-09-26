@@ -11,7 +11,7 @@
 
 # To enable all, uncomment following line
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
-export DEB_CFLAGS_MAINT_APPEND  = -DLinux -Wall -I. -DTAP -Wno-strict-aliasing
+export DEB_CFLAGS_MAINT_APPEND  = -DLinux -Wall -I. -DTAP -DHV -Wno-strict-aliasing
 export DEB_LDFLAGS_MAINT_APPEND = -lpthread -lutil -s
 
 %:
