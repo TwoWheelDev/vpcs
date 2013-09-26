@@ -47,6 +47,20 @@ int help_hist(int argc, char **argv)
 	return 1;
 }
 
+int help_relay(int argc, char **argv)
+{
+	printf( "\n\033[1mrelay [arguments]\033[0m\n"
+		"  arguments:\n"
+		"    port <port>                  set relay hub port\n"
+		"    show                         show the relay rules\n"
+		"    add [ip1:]port1 [ip2:]port2  relay the packets between port1 and port2\n"
+		"    del [ip1:]port1 [ip2:]port2  delete the relay rule\n"
+		"    del <id>                     delete the relay rule\n");
+
+	return 1;
+}
+
+
 int help_ip(int argc, char **argv)
 {
 	
@@ -216,7 +230,7 @@ int help_set(int argc, char **argv)
 		"    lport <port>    local port\n"
 		"    rport <port>    remote peer port\n"
 		"    rhost <ip>      remote peer host IPv4 address\n"
-		"    pcname <name>   rename the current VPC\n"
+		"    pcname <name>   set the hostname of the current VPC\n"
 		"    echo [on|off]   set echoing on or off during script execution\n"
 		"    dump [options]  set the packet dump flag for this VPC. \n"
 		"                    Options:\n"
@@ -227,6 +241,14 @@ int help_set(int argc, char **argv)
 		"                              must use [detail|mac|raw] as well as 'all'\n"
 		"                      off     clear all the flag\n");
         
+	return 1;
+}
+
+int help_shell(int argc, char **argv)
+{
+	printf( "\n\033[1m! [command [args]]\033[0m\n"
+		" Invoke an OS command with the 'args' as its arguments\n");
+			
 	return 1;
 }
 
@@ -304,14 +326,23 @@ int help_help(int argc, char **argv)
 	return 1;
 }
 
+int help_shut(int argc, char **argv)
+{
+	printf( "\n\033[1m%s\033[0m, shutdown the process (only in daemon mode)\n", argv[0]);
+
+	return 1;
+}
+
 int run_help(int argc, char **argv) 
 {
 	printf ("\n"
 		"?                        Print help\n"
+		"! [command [args]]       Invoke an OS command with the 'args' as its arguments\n"
 		"<digit>                  Switch to the VPC<digit>. <digit> range 1 to 9\n"
 		"arp                      Shortcut for: \033[1mshow arp\033[0m. Show arp table\n"
 		"clear [arguments]        Clear IPv4/IPv6, arp/neighbor cache, command history\n"
 		"dhcp [-options]          Shortcut for: \033[1mip dhcp\033[0m. Get IPv4 address via DHCP\n"
+		"disconnect               Exit the telnet session (daemon mode)\r\n"
 		"echo <text>              Display <text> in output\n"
 		"help                     Print help\n"
 		"history                  Shortcut for: \033[1mshow history\033[0m. List the command history\n"
@@ -319,6 +350,7 @@ int run_help(int argc, char **argv)
 		"load <filename>          Load the configuration/script from the file <filename>\n"
 		"ping <host> [-options]   Ping the network <host> with ICMP (default) or TCP/UDP\n"
 		"quit                     Quit program\n"
+		"relay [arguments]        Relay packets between two UDP ports\n"
 		"rlogin [<ip>] <port>     Telnet to host relative to HOST PC\n"
 		"save <filename>          Save the configuration to the file <filename>\n"
 		"set [arguments]          Set VPC name, peer ports, dump options, echo on or off\n"

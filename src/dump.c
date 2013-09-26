@@ -123,10 +123,14 @@ static void dmp_arp(void *dat)
 	arphdr *ah = (arphdr *)dat;	
 	struct in_addr in;
 	u_char broadcast[ETH_ALEN] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+	u_int *si, *di;
 	
 	printf("ARP, OpCode: %d (%s)", ntohs(ah->op), 
 	    ((ntohs(ah->op) == ARPOP_REQUEST) ? "Request" : "Reply"));
-	if (((u_int *)ah->sip)[0] == ((u_int *)ah->dip)[0] && ((u_int *)ah->dip)[0] != 0)
+	
+	si = (u_int *)ah->sip;
+	di = (u_int *)ah->dip;
+	if (si[0] == di[0] && di[0] != 0)
 		printf("    Gratuitous ARP");    	
 	printf("\nEther Address: ");
 	PRINT_MAC(ah->sea);
@@ -138,12 +142,12 @@ static void dmp_arp(void *dat)
 	printf("\n");
 	
 	if ((ntohs(ah->op) == ARPOP_REQUEST)) { 
-		in.s_addr = ((u_int *)ah->dip)[0];
+		in.s_addr = di[0];
 		printf("Who has %s? Tell ", inet_ntoa(in));
-		in.s_addr = ((u_int *)ah->sip)[0];
+		in.s_addr = si[0];
 		printf("%s", inet_ntoa(in));
 	} else if ((ntohs(ah->op) == ARPOP_REPLY)) {
-		in.s_addr = ((u_int *)ah->sip)[0];
+		in.s_addr = si[0];
 		printf("%s is at ", inet_ntoa(in));
 		PRINT_MAC(ah->sea);
 	}
@@ -284,7 +288,6 @@ dmp_dns(void *dat)
 	int iplen;	
 	char *p, *q;
 	dnshdr *dh;
-	dnsflags *dflags;
 	u_short *sp;	
 	char name[256];
 	int i, j;
@@ -303,6 +306,12 @@ dmp_dns(void *dat)
 	const char *typestr[16] = {"A", "NS", "MD", "MF", "CNAME", "SOA", "MB", 
 		"MG", "MR", "NULL", "WKS", "PTR", "HINFO", "MINFO", "MX", "TXT"};
 	const char *classtr[4] = {"IN", "CS", "CH", "HS"};
+	/* make gcc happy */
+	union u_dnsflags {
+		u_short flags;
+		dnsflags dflags;
+	} u_dnsflags;
+	dnsflags *dflags;
 	
 	iplen = ntohs(iph->len);
 	dh = (dnshdr *)(uh + 1);
@@ -332,7 +341,8 @@ dmp_dns(void *dat)
 		printf("\n");
 	} else if (ntohs(uh->sport) == 53){
 		printf(", RespFlags = %x, ", dh->flags);
-		dflags = (dnsflags *)(&(dh->flags));
+		u_dnsflags.flags = dh->flags;
+		dflags = &u_dnsflags.dflags;
 		if (dflags->rc != 0) {
 			if (dflags->rc)
 				printf("rc: %s", rcode[dflags->rc]);
@@ -521,3 +531,4 @@ dmp_dns_timestr(u_int s)
 	
 	return buf;
 }
+

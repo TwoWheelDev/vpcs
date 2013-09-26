@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2012, Paul Meng (mirnshi@gmail.com)
+ * Copyright (c) 2007-2013, Paul Meng (mirnshi@gmail.com)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without 
@@ -43,8 +43,11 @@
 #include <fcntl.h>
 #include <syslog.h>
 
-#include <termios.h>
+#include <sys/wait.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
+#include <termios.h>
 
 #ifdef Darwin
 #include <util.h>
@@ -56,52 +59,64 @@
 
 extern int ctrl_c;
 static int cmd_quit = 0;
+static pid_t fdtty_pid;
+static int daemon_port;
 
 static void daemon_proc(int sock, int fdtty);
-static void sig_cmd_quit(int sig);
+static void sig_usr1(int sig);
+static void sig_usr2(int sig);
+static void sig_term(int sig);
 static void sig_int(int sig);
 static void set_telnet_mode(int s);
 
-int daemonize(int port)
+int 
+daemonize(int port, int bg)
 {
-	pid_t pid;
-	int fdtty;
-	int sock;
+	int sock = 0;
 	struct sockaddr_in serv;
 	int on = 1;
-	
-	pid = fork();
-	if (pid < 0) {
-		perror("Daemon fork");
-		return (-1);
+	int fdtty;	
+	pid_t pid;
+		
+	if (bg) {
+		pid = fork();
+		if (pid < 0) {
+			perror("Daemon fork");
+			return (-1);
+		}
+		if (pid > 0)
+			exit(0);
 	}
-	if (pid > 0)
-		exit(0);
 
+	daemon_port = port;
+	
 	setsid();
 	
-	signal (SIGTERM, SIG_IGN);
+	signal(SIGTERM, &sig_term);
 	signal(SIGINT, &sig_int);
-	signal (SIGHUP, SIG_IGN);
-	signal(SIGUSR1, &sig_cmd_quit);
-   	
+	signal(SIGHUP, SIG_IGN);
+	signal(SIGUSR1, &sig_usr1);
+   	signal(SIGUSR2, &sig_usr2);
+   	signal(SIGCHLD, SIG_IGN);
+	signal(SIGPIPE, SIG_IGN);
+	
    	/* open an tty as standard I/O for vpcs */
-   	pid = forkpty(&fdtty, NULL, NULL, NULL);
+   	fdtty_pid = forkpty(&fdtty, NULL, NULL, NULL);
    	
-   	if (pid < 0) {
+   	if (fdtty_pid < 0) {
    		perror("Daemon fork tty\n");
    		return (-1);
 	}
 	
    	/* child process, the 'real' vpcs */
-   	if (pid == 0) 
+   	if (fdtty_pid == 0) 
    		return 0;
    	
    	/* daemon socket */
    	sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (sock < 0) {
 		perror("Daemon socket");
-		return (-1);
+		goto err;
 	}
 	(void) setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
 	    (char *)&on, sizeof(on));
@@ -122,17 +137,22 @@ int daemonize(int port)
 
 	daemon_proc(sock, fdtty);
 err:
+	if (sock >= 0)
+		close(sock);
+
 	close(fdtty);
-	kill(pid, 9);
+	kill(fdtty_pid, 9);
 	exit(-1);
 }
 
-static void daemon_proc(int sock, int fdtty)
+static void 
+daemon_proc(int sock, int fdtty)
 {
 	int sock_cli;
 	struct sockaddr_in cli;
 	int slen;
 	fd_set set;
+	struct timeval tv;
 	u_char buf[8192];
 	int i;
 
@@ -149,10 +169,20 @@ static void daemon_proc(int sock, int fdtty)
 			FD_ZERO(&set);
 			FD_SET(sock_cli, &set);
 			FD_SET(fdtty, &set);
-			if (select((fdtty > sock_cli) ? (fdtty+1) : (sock_cli+1),
-			    &set, NULL, NULL, NULL) < 0) {
+			
+			/* wait 100ms */
+			tv.tv_sec = 0;
+			tv.tv_usec = 100000; 
+			i = select((fdtty > sock_cli) ? (fdtty+1) : (sock_cli+1),
+			    &set, NULL, NULL, &tv);
+			
+			/* error */
+			if (i < 0)
 				break;
-			}
+			/* time out */
+			if (i == 0)
+				continue;
+				
 			if (FD_ISSET(fdtty, &set)) {
 				memset(buf, 0, sizeof(buf));
 				i = read(fdtty, buf, sizeof(buf));
@@ -172,23 +202,59 @@ static void daemon_proc(int sock, int fdtty)
 					break;
 			}
 		}
+		strcpy((char *)buf, "\r\nGood-bye\r\n");
+		i = write(sock_cli, buf, strlen((char *)buf));
 		close(sock_cli);
 	}
 }
 
-void sig_cmd_quit(int sig)
+/* should be sent from 'real vpcs' command: disconnect
+ */
+static void 
+sig_term(int sig)
 {
 	cmd_quit = 1;
-	signal(SIGUSR1, &sig_cmd_quit);
+	signal(SIGTERM, &sig_term);
 }
 
-void sig_int(int sig)
+
+/* should be sent from 'real vpcs' command: quit
+ * vpcs has exited. 
+ */
+static void 
+sig_usr1(int sig)
+{
+	usleep(100000);
+	kill(fdtty_pid, SIGKILL);
+		
+	exit(0);
+}
+
+/* should be sent from hypervisor command: stop or quit 
+ */
+static void 
+sig_usr2(int sig)
+{
+	/* release the resource and save workspace */
+	kill(fdtty_pid, SIGUSR1);
+	
+	usleep(100000);
+	kill(fdtty_pid, SIGKILL);
+	
+	usleep(100000);
+	exit(0);
+}
+
+/* Ctrl+C was pressed */
+static void 
+sig_int(int sig)
 {
 	ctrl_c = 1;
 	signal(SIGINT, &sig_int);
 }
 
-void set_telnet_mode(int s)
+static void 
+set_telnet_mode(int s)
 {
 	/* DO echo */
 	char *neg =
@@ -196,10 +262,9 @@ void set_telnet_mode(int s)
 	    "\xFF\xFB\x01"
 	    "\xFF\xFD\x03"
 	    "\xFF\xFB\x03";
-	int rc;
 	
-	rc = write(s, neg, strlen(neg));
-	if (rc);
+	if (write(s, neg, strlen(neg)))
+		;
 }
 
 /* end of file */

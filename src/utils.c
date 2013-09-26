@@ -51,20 +51,42 @@ char *getkv(char *str)
 int mkargv(char *str, char **argv, int max)
 {
 	int n = 0;
-	char *p;
+	char *p, *q, *es;
 	char **args = argv;
+	char *sep = "=/ \t";
 	static char buf[MAX_LEN];
 	
-	if (str != NULL) {
-		memset(buf, 0, sizeof(buf));
-		strncpy(buf, str, strlen(str));
-
-		p = strtok(buf, "=/ \t");
-		while (p != NULL && n < max) {
-			args[n++] = p;
-			p = strtok(NULL, "=/ \t");
+	if (str == NULL)
+		return n;
+	
+	memset(buf, 0, sizeof(buf));
+	strncpy(buf, str, sizeof(buf) - 1);
+	
+	p = buf;
+	es = p + strlen(buf);
+	
+	while (p && p < es) {
+		if (*p == '"') {
+			q = strchr(p + 1, '"');
+			if (!q)
+				goto ret;
+			*q = '\0';
+			/* ignore "" */
+			if (q > p + 1)
+				args[n++] = p + 1;
+			p = ++q;
+			continue;
 		}
+		if ((q = strsep(&p, sep)) != NULL) {
+			/* ignore empty substring */
+			if (*q != '\0')
+				args[n++] = q;
+			continue;
+		} 
+		break;
 	}
+	
+ret:	
 	args[n] = NULL;
 	return n;
 }
@@ -114,14 +136,18 @@ int digitstring(const char *s)
 char *ttrim(char *s)
 {
 	int len;
+	int c;
 	
 	if (s == NULL)
 		return NULL;
 	len = strlen(s);
 	len--;
-	while (len >= 0 && isspace(s[len]))
+	while (len >= 0) {
+		c = s[len];
+		if (!isspace(c))
+			break;
 		len--;
-	
+	}
 	s[len + 1] = '\0';	
 	
 	return s;
@@ -143,6 +169,22 @@ void preh(u_char *e)
 	for (i = 0; i < 6; i++)
 		printf("%2.2x ", *(e + i));
 	return;
+}
+
+#include <stdarg.h>
+int logs(const char *fmt, ...)
+{
+	va_list ap;
+	FILE *fp;
+	int ret;
+	
+	fp = fopen("vpcs.log", "a+");
+	va_start(ap, fmt);
+	ret = vfprintf(fp, fmt, ap);
+	va_end(ap);
+	fclose(fp);
+	
+	return ret;
 }
 #endif
 
