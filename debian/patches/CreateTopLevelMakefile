@@ -7,20 +7,9 @@ Author: Daniel Lintott <daniel@serverb.co.uk>
 Index: vpcs/Makefile
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ vpcs/Makefile	2013-09-26 11:35:22.969944065 +0100
-@@ -0,0 +1,43 @@
-+# Makefile for VPCS 0.4b2
-+
-+# Host CPU selection
-+#   - Use "i386" for a build on x86 (32-bits)
-+#   - Use "amd64" for a build on x86_64 (64-bits)
-+ifeq ($(shell arch),x86_64)
-+export ARCH?=amd64
-+endif
-+
-+ifeq ($(shell arch),i686)
-+export ARCH?=i386
-+endif
++++ vpcs/Makefile	2013-09-27 12:05:16.658688079 +0100
+@@ -0,0 +1,32 @@
++# Makefile for VPCS 0.5b0
 +
 +# Operating System Type
 +# Linux = linux
@@ -30,7 +19,7 @@ Index: vpcs/Makefile
 +export VPCS_OS?=linux
 +
 +# Executable binary extension
-+export DESTDIR?=/usr
++export PREFIX?=/usr
 +export BIN_EXT?=
 +
 +
@@ -44,9 +33,9 @@ Index: vpcs/Makefile
 +
 +install: vpcs$(BIN_EXT)
 +	@echo "Installing VPCS to $(DESTDIR)"
-+	install -d $(DESTDIR)/bin $(DESTDIR)/share/man/man1
-+	install vpcs$(BIN_EXT) $(DESTDIR)/bin/
-+	install -m644 man/vpcs.1 $(DESTDIR)/share/man/man1/
++	install -d $(DESTDIR)$(PREFIX)/bin $(DESTDIR)$(PREFIX)/share/man/man1
++	install vpcs$(BIN_EXT) $(DESTDIR)$(PREFIX)/bin/
++	install -m644 man/vpcs.1 $(DESTDIR)$(PREFIX)/share/man/man1/
 +
 +clean:
 +	$(MAKE) -C src -f Makefile.$(VPCS_OS) clean
