@@ -1,14 +1,5 @@
 vpcs (0.5b0-1) unstable; urgency=low
 
-  * Imported Upstream version 0.5b0
-  * Update Patches
-  * Update debian/rules
-  * Update debian/watch
+  * Initial release. (Closes: #720196)
 
- -- Daniel Lintott <daniel@serverb.co.uk>  Thu, 26 Sep 2013 15:01:35 +0100
-
-vpcs (0.4b2-1) unstable; urgency=low
-
-  * Initial release (Closes: #720196)
-
- -- Daniel Lintott <daniel@serverb.co.uk>  Tue, 17 Sep 2013 19:44:40 +0100
+ -- Daniel Lintott <daniel@serverb.co.uk>  Fri, 27 Sep 2013 12:19:00 +0100
