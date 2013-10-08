@@ -1,3 +1,6 @@
 ManpageFix
 LinuxMakefilePatch
 CreateTopLevelMakefile
+BuildOnGNUkFreeBSD
+HypervisorPathPatch
+echild_fix
