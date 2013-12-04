@@ -5,11 +5,20 @@
 
 # To enable all, uncomment following line
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+ifeq ($(DEB_HOST_ARCH_OS),kfreebsd)
+export DEB_CFLAGS_MAINT_APPEND  = -DGNUkFreeBSD -DFreeBSD -Wall -I. -DHV -Wno-strict-aliasing
+else
 export DEB_CFLAGS_MAINT_APPEND  = -DLinux -Wall -I. -DTAP -DHV -Wno-strict-aliasing
+endif
 export DEB_LDFLAGS_MAINT_APPEND = -lpthread -lutil -s
 
 %:
-	dh $@ 
+	dh $@
+
+override_dh_auto_build:
+	dh_auto_build
+	sed -n -e '1,/History/!p' readme.txt > CHANGELOG
 
 override_dh_auto_clean:
 	$(MAKE) -C src -f Makefile.linux clean
