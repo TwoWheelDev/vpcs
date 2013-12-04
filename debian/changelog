@@ -1,3 +1,10 @@
+vpcs (0.5b0-2) UNRELEASED; urgency=low
+
+  * [63d71f16] Bump standards version to 3.9.5 - No changes
+  * [1ab1f0cb] Update debian/rules
+
+ -- Daniel Lintott <daniel@serverb.co.uk>  Wed, 04 Dec 2013 13:07:21 +0000
+
 vpcs (0.5b0-1) unstable; urgency=low
 
   * Initial release. (Closes: #720196)
