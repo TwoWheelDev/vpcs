@@ -3,7 +3,7 @@ Section: net
 Priority: optional
 Maintainer: Daniel Lintott <daniel@serverb.co.uk>
 Build-Depends: debhelper (>= 9)
-Standards-Version: 3.9.4
+Standards-Version: 3.9.5
 Homepage: http://sourceforge.net/projects/vpcs/
 Vcs-Browser: https://github.com/dlintott/vpcs
 Vcs-Git: https://github.com/dlintott/vpcs.git
