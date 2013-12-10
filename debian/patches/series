@@ -4,3 +4,4 @@ CreateTopLevelMakefile
 BuildOnGNUkFreeBSD
 HypervisorPathPatch
 echild_fix
+hurd_path_max

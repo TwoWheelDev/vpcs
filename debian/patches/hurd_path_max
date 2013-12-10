@@ -1,0 +1,15 @@
+Index: vpcs/src/command.h
+===================================================================
+--- vpcs.orig/src/command.h	2013-09-17 12:22:10.024508218 +0100
++++ vpcs/src/command.h	2013-12-04 14:26:45.227346232 +0000
+@@ -45,6 +45,10 @@
+ 
+ const char *ip4Info(const int id);
+ 
++#ifndef PATH_MAX
++# define PATH_MAX 8192
++#endif
++
+ #endif
+ 
+ /* end of file */
