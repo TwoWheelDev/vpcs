@@ -6,11 +6,16 @@
 # To enable all, uncomment following line
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
+ifeq ($(DEB_HOST_ARCH_OS),hurd)
+export DEB_CFLAGS_MAINT_APPEND  = -DLinux -Wall -I. -I/usr/share/libdde_linux26/build/include/linux-headers -DHV -Wno-strict-aliasing
+else
 ifeq ($(DEB_HOST_ARCH_OS),kfreebsd)
 export DEB_CFLAGS_MAINT_APPEND  = -DGNUkFreeBSD -DFreeBSD -Wall -I. -DHV -Wno-strict-aliasing
 else
 export DEB_CFLAGS_MAINT_APPEND  = -DLinux -Wall -I. -DTAP -DHV -Wno-strict-aliasing
 endif
+endif
+
 export DEB_LDFLAGS_MAINT_APPEND = -lpthread -lutil -s
 
 %:
