@@ -4,7 +4,7 @@ vpcs (0.5b0-2) unstable; urgency=low
   * [1ab1f0cb] Update debian/rules
   * [37017180] Add patch to fix FTBFS on hurd-i386
 
- -- Daniel Lintott <daniel@serverb.co.uk>  Tue, 10 Dec 2013 16:54:53 +0000
+ -- Daniel Lintott <daniel@serverb.co.uk>  Tue, 18 Mar 2014 16:38:45 +0000
 
 vpcs (0.5b0-1) unstable; urgency=low
 
