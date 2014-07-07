@@ -3,7 +3,7 @@ Upstream-Name: vpcs
 Source: http://sourceforge.net/projects/vpcs/
 
 Files: *
-Copyright: 2007-2013 Paul Meng <mirnshi@gmail.com>
+Copyright: 2007-2014 Paul Meng <mirnshi@gmail.com>
 License: BSD-2-Clause
 
 Files: src/getopt.*
@@ -16,7 +16,7 @@ Copyright: 1996-1999 Internet Systems Consortium
 License: ISC
 
 Files: debian/*
-Copyright: 2013 Daniel Lintott <daniel@serverb.co.uk>
+Copyright: 2013-2014 Daniel Lintott <daniel@serverb.co.uk>
 License: BSD-2-Clause
 
 License: BSD-2-Clause
