@@ -1,3 +1,4 @@
+hyphen-used-as-minus.patch
 LinuxMakefilePatch
 CreateTopLevelMakefile
 hurd_path_max

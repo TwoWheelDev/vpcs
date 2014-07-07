@@ -1,0 +1,15 @@
+Description: Hyphen used as minus in manpage
+Author: Daniel Lintott <daniel@serverb.co.uk>
+Applied-Upstream: https://sourceforge.net/p/vpcs/code/92/
+Last-Update: 2014-07-07
+--- a/man/vpcs.1
++++ b/man/vpcs.1
+@@ -54,7 +54,7 @@
+ .SS "TAP Mode Options"
+ .TP
+ \fB-d\fR \fIdevice\fR
+-Device name, works only when -i is set to 1
++Device name, works only when \fB-i\fR is set to 1
+ .SS "Hypervisor Mode Option"
+ .TP
+ \fB-H\fR \fIport\fR
