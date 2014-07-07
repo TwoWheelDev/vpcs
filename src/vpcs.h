@@ -86,7 +86,8 @@ typedef struct {
 	int mtu;
 } hipv4;
 
-#define MAX_NAMES_LEN	(6)	
+#define MAX_NAMES_LEN	(6)
+#define MAX_SESSIONS 1000	
 typedef struct {
 	int id;				/* pc id */
 	char xname[MAX_NAMES_LEN + 1];	/* pc name */
@@ -103,8 +104,8 @@ typedef struct {
 	struct pq oq;			/* queue */
 	pthread_mutex_t locker;		/* mutex */
 	sesscb mscb;			/* opened by app */
-	sesscb sesscb[NUM_PTHS];	/* tcp session pool */
-	tcpcb6 tcpcb6[NUM_PTHS];	/* tcp6 session pool */
+	sesscb sesscb[MAX_SESSIONS];	/* tcp session pool */
+	tcpcb6 tcpcb6[MAX_SESSIONS];	/* tcp6 session pool */
 	ipmac ipmac4[ARP_SIZE];		/* arp pool */
 	ip6mac ipmac6[NB_SIZE];		/* neighbor pool */
 	hipv4 ip4;
@@ -113,7 +114,7 @@ typedef struct {
 	hipv6 link6;
 } pcs;
 
-pcs vpc[NUM_PTHS];
+pcs vpc[MAX_NUM_PTHS];
 
 #define delay_ms(s) usleep(s * 1000)
 

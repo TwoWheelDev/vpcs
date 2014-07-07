@@ -1,6 +1,6 @@
 
-.TH VPCS "1" "2013-09-20" "0.5" "Virtual PC Simulator" 
-./ Last revision: 2013-09-20 16:25:50
+.TH VPCS "1" "2014-06-28" "0.5" "Virtual PC Simulator" 
+.\" Last revision: 2014-06-28 16:25:50
 .hy 0 
 .if n 
 .ad l 
@@ -23,6 +23,9 @@ Print the command line options and exit
 .TP
 \fB-v\fR
 Print the version information and exit
+.TP
+\fB-i\fR \fInum\fR
+number of vpc instances to start (default is 9)
 .TP
 [\fB-r\fR] \fIscriptfile\fR
 If \fIscriptfile\fR is specified, then \fBvpcs\fR reads the file on start-up and executes the commands in the \fIscriptfile\fR.  \fIscriptfile \fR must be in \fBvpcs\fR script file format.  By default, if a file named \fBstartup.vpc\fR exists in the directory where the \fBvpcs\fR program was started, it will be read and executed when \fBvpcs\fR starts.  The \fB-r\fR option is optional if \fIscriptfile\fR is the last parameter.
@@ -48,7 +51,10 @@ This option is the default and not necessary, but included to contrast with the 
 .TP
 \fB-c\fR \fIport\fR
 \fBvpcs\fR streams packets to nine UDP ports commencing at \fI127.0.0.1:30000\fR.  The \fB-c\fR option allows you to stream packets to a different set of nine ports commencing at the base port number specified by \fIport\fR.
-
+.SS "TAP Mode Options"
+.TP
+\fB-d\fR \fIdevice\fR
+Device name, works only when -i is set to 1
 .SS "Hypervisor Mode Option"
 .TP
 \fB-H\fR \fIport\fR
@@ -155,7 +161,7 @@ Print the information of VPCs (default). Try \fBshow ?\fR
 \fBsleep\fR <seconds> [text]
 Print <text> and pause the running script for <seconds>
 .TP
-\fBtrace\fR <host> [-options]
+\fBtrace\fR <host> [\-options]
 Print the path packets take to network <host>
 .TP
 \fBversion\fR
@@ -184,7 +190,7 @@ List \fBvpcs\fR process
 \fBdisconnect\fR            
 Exit the telnet session
 .TP
-\fBquit\fR [-f]            
+\fBquit\fR [\-f]            
 Stop \fBvpcs\fR processes and hypervisor,
 \fI-f\fR force quit without prompting
 .TP
@@ -211,3 +217,4 @@ VPCS is free software, distributed under the terms of the "BSD" licence.
 Source code and license can be found at vpcs.sf.net.
 .br
 For more information, please visit wiki.freecode.com.cn.
+
