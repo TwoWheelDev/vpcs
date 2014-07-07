@@ -1,3 +1,18 @@
+vpcs (0.5b2-1) unstable; urgency=medium
+
+  * Imported Upstream version 0.5b2
+  * Remove patches applied upstream.
+     + BuildOnGNUkFreeBSD
+     + HypervisorPathPatch
+     + ManpageFix
+     + echild_fix
+  * Update CreateTopLevelMakefile patch
+  * Update copyright years
+  * Add patch to correct lintian info alert.
+     + Hyphen used as minus sign in manpage
+
+ -- Daniel Lintott <daniel@serverb.co.uk>  Mon, 07 Jul 2014 16:59:00 +0100
+
 vpcs (0.5b0-2) unstable; urgency=low
 
   * [63d71f16] Bump standards version to 3.9.5 - No changes
