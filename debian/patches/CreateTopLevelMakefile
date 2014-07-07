@@ -9,7 +9,7 @@ Index: vpcs/Makefile
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
 +++ vpcs/Makefile	2013-09-27 12:05:16.658688079 +0100
 @@ -0,0 +1,32 @@
-+# Makefile for VPCS 0.5b0
++# Makefile for VPCS 0.5b2
 +
 +# Operating System Type
 +# Linux = linux
