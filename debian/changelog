@@ -1,3 +1,21 @@
+vpcs (0.5b2-1~ppa1) trusty; urgency=medium
+
+  * Imported Upstream version 0.5b2
+  * Remove patches applied upstream.
+     + BuildOnGNUkFreeBSD
+     + HypervisorPathPatch
+     + ManpageFix
+     + echild_fix
+  * Update CreateTopLevelMakefile patch
+  * Update copyright years
+  * Add patch to correct lintian info alert.
+     + Hyphen used as minus sign in manpage
+  * Bump standards version to 3.9.5 - No changes
+  * Update debian/rules
+  * Add patch to fix FTBFS on hurd-i386
+
+ -- Daniel Lintott <daniel@serverb.co.uk>  Fri, 18 Jul 2014 11:19:54 +0100
+
 vpcs (0.5b0-1~ppa1) raring; urgency=low
 
   * Imported Upstream version 0.5b0
@@ -7,10 +25,10 @@ vpcs (0.5b0-1~ppa1) raring; urgency=low
   * Change build-depends to debhelper (>= 9)
   * Update patches
 
- -- Daniel Lintott <daniel@serverb.co.uk> Fri, 27 Sep 2013 14:06:54 +0100
+ -- Daniel Lintott <daniel@serverb.co.uk>  Fri, 27 Sep 2013 14:06:54 +0100
 
 vpcs (0.4b2-1~ppa1) raring; urgency=low
 
   * Initial release to Launchpad PPA
 
- -- Daniel Lintott <daniel@serverb.co.uk> Mon, 19 Aug 2013 19:40:34 +0100
+ -- Daniel Lintott <daniel@serverb.co.uk>  Mon, 19 Aug 2013 19:40:34 +0100
